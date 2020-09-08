@@ -1,0 +1,68 @@
+{
+  "env": {
+    "browser": false,
+    "es6": true,
+    "es2017": true,
+    "node": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "tsconfig.json",
+    "sourceType": "module"
+  },
+  "plugins": [
+    "@typescript-eslint",
+    "simple-import-sort"
+  ],
+  "settings": {
+    "react": {
+      "pragma": "jsx"
+    }
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier",
+    "prettier/@typescript-eslint"
+  ],
+  "rules": {
+    "brace-style": ["error", "1tbs"],
+    "lines-between-class-members": ["error", "always", { "exceptAfterSingleLine": true }],
+    "no-console": ["error", { "allow": ["info", "warn", "error"] }],
+    "no-duplicate-imports": ["error"],
+    "no-import-assign": "error",
+    "no-multiple-empty-lines": ["error", { "max": 2, "maxEOF": 1, "maxBOF": 0 }],
+    "simple-import-sort/sort": ["warn", {
+      "groups": [
+        // Side effect imports.
+        ["^\\u0000"],
+        // Packages.
+        // Things that start with a letter (or digit or underscore), or `@` followed by a letter.
+        ["^@?\\w"],
+        // Absolute imports and other imports such as Vue-style `@/foo`.
+        // Anything that does not start with a dot.
+        ["^[^.]"],
+        // Relative imports.
+        // Anything that starts with a dot.
+        ["^\\."]
+      ]
+    }],
+    "sort-imports": ["warn", { "ignoreCase": true, "ignoreDeclarationSort": true }],
+    "@typescript-eslint/member-ordering": ["warn"],
+    "@typescript-eslint/explicit-function-return-type": ["warn", { "allowExpressions": true }],
+    "@typescript-eslint/no-use-before-define": ["error", { "functions": false, "variables": false }],
+    "@typescript-eslint/camelcase": "off",
+    "@typescript-eslint/ban-types": "warn",
+    "@typescript-eslint/no-var-requires": "off"
+  },
+  "overrides": [
+    {
+      "files": ["*.tsx"],
+      "rules": {
+        "@typescript-eslint/explicit-function-return-type": "off",
+        "@typescript-eslint/explicit-module-boundary-types": "off"
+      }
+    }
+  ]
+}
