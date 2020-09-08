@@ -1,4 +1,4 @@
-import http from 'http'
+import http, { OutgoingHttpHeaders } from 'http'
 import WebSocket from 'ws'
 
 interface SocketOptions {
@@ -8,17 +8,21 @@ interface SocketOptions {
   checkInterval: number
   connectTimeout: number
   keepAliveInterval: number
-  keepAliveMessage: string | object
+  keepAliveMessage: string
   keepAliveRequireResponse: boolean // not implemented
-  keepAliveResponseMessage: string | object
+  keepAliveResponseMessage: string
   keepAliveResponseTimeout: number
 
-  onopen?: (ev: WebSocket.OpenEvent) => any // every connection
-  onconnect?: (ev: WebSocket.OpenEvent) => any // only first-time connection
-  onreconnect?: (ev: WebSocket.OpenEvent) => any // only reconnection
-  onmessage: (ev: WebSocket.MessageEvent) => any
-  onclose?: (ev: WebSocket.CloseEvent | WebSocket.ErrorEvent) => any // every disconnect
-  onerror?: (ev: WebSocket.ErrorEvent) => any
+  onopen?: (ev: WebSocket.OpenEvent) => unknown // every connection
+  onconnect?: (ev: WebSocket.OpenEvent) => unknown // only first-time connection
+  onreconnect?: (ev: WebSocket.OpenEvent) => unknown // only reconnection
+  onmessage: (ev: WebSocket.MessageEvent) => unknown
+  onclose?: (ev: WebSocket.CloseEvent | WebSocket.ErrorEvent) => unknown // every disconnect
+  onerror?: (ev: WebSocket.ErrorEvent) => unknown
+
+  // which port to connect on localhost for tunneled connections
+  // stored here because this ws object is passed down the proxying functions
+  tunnelLocalPort: number
 }
 
 enum WebSocketState {
@@ -34,22 +38,24 @@ enum WebSocketState {
  * Also automatically JSON.stringifyes when trying to send objects.
  */
 export default class ResilientWsClient {
-  private url: string
+  readonly url: string
 
-  private opts: SocketOptions = {
+  readonly opts: SocketOptions = {
     reconnectDelay: 500, // ms
     maxReconnectDelay: 5000, // ms
     checkInterval: 60000, // ms
     connectTimeout: 15000, // ms
     keepAliveInterval: 45000, // ms
-    keepAliveMessage: '"ping"',
+    keepAliveMessage: 'ping',
 
     // todo: keep-alive response checking is not implemented yet
     keepAliveRequireResponse: false,
-    keepAliveResponseMessage: '"pong"',
+    keepAliveResponseMessage: 'pong',
     keepAliveResponseTimeout: 20000, // ms
 
     onmessage: noop,
+
+    tunnelLocalPort: 0,
   }
 
   private wasConnected = false
@@ -64,6 +70,11 @@ export default class ResilientWsClient {
   private timeoutTimer: NodeJS.Timeout | null = null
   private checkTimer: NodeJS.Timeout | null = null
   private keepAliveTimer: NodeJS.Timeout | null = null
+
+  /**
+   * Some dynamic headers that are memorized after connection init to be re-sent on reconnect
+   */
+  private reconnectHeaders: OutgoingHttpHeaders = {}
 
   constructor(url: string, options?: Partial<SocketOptions>) {
     this.url = url
@@ -82,6 +93,10 @@ export default class ResilientWsClient {
     return this.readyState === WebSocket.OPEN
   }
 
+  setReconnectHeaders(headers: OutgoingHttpHeaders): void {
+    this.reconnectHeaders = headers
+  }
+
   private connect = (): void => {
     this.clearTimers()
     if (this.forceClose) return
@@ -89,7 +104,13 @@ export default class ResilientWsClient {
     this.attempt++
     this.readyState = WebSocket.CONNECTING
 
-    this.ws = new WebSocket(this.url, this.opts.requestArgs)
+    this.ws = new WebSocket(this.url, {
+      ...this.opts.requestArgs,
+      headers: {
+        ...this.opts.requestArgs?.headers,
+        ...this.reconnectHeaders,
+      },
+    })
 
     this.ws.onmessage = this.opts.onmessage
     this.ws.onopen = this.onOpen

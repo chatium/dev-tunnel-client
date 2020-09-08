@@ -7,7 +7,7 @@ import { ConnectionClosedMessage, DataMessage } from './tunnelMessages'
  * Creates, initializes and stores a new connection to the local tunnel endpoint with the given ID
  */
 export function openLocalConnection(connId: number, ws: ResilientWsClient): LocalConnection {
-  const socket = connect({ host: 'localhost', port: 5050 })
+  const socket = connect({ host: 'localhost', port: ws.opts.tunnelLocalPort })
   const conn: LocalConnection = {
     socket,
     closedFromRemote: false,

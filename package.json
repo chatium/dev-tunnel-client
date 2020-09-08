@@ -16,6 +16,9 @@
     "url": "https://github.com/chatium/dev-tunnel-server/issues"
   },
   "homepage": "https://github.com/chatium/dev-tunnel-server#readme",
+  "bin": {
+    "dev-tunnel": "./dist/main.js"
+  },
   "husky": {
     "hooks": {
       "post-checkout": "yarnhook",
@@ -37,16 +40,18 @@
     "build:watch": "tsc -w",
     "clean": "rimraf lib",
     "lint:all": "eslint --ext .ts .",
-    "serve": "cd dist && node main.js",
-    "serve:watch": "sleep 5; NODE_ENV='development' nodemon --enable-source-maps -d 2 --cwd dist -w '**/*' -w '.env' -e '*' main.js && echo '\\x1b[95m\\x1b[1mProbably ts-compilation is not complete yet. Will auto-try again in 10 seconds...\n' && exit 1",
+    "serve": "cd dist && node main.js --server ws://localhost:8081 5051",
+    "serve:watch": "sleep 5; NODE_ENV='development' nodemon --enable-source-maps -d 2 --cwd dist -w '**/*' -w '.env' -e '*' main.js --server ws://localhost:8081 --domain davojan 5050 && echo '\\x1b[95m\\x1b[1mProbably ts-compilation is not complete yet. Will auto-try again in 10 seconds...\n' && exit 1",
     "start": "npm run watch",
     "watch": "concurrently --restart-tries 3 --restart-after 10000 -p \"[{name}]\" -n \"TS,Node\" -i --default-input-target Node -c \"cyan.bold,green.bold\" \"npm run build:watch\" \"npm run serve:watch\""
   },
   "dependencies": {
+    "minimist": "~1.2.5",
     "tslib": "~2.0.1",
     "ws": "~7.3.1"
   },
   "devDependencies": {
+    "@types/minimist": "~1.2.0",
     "@types/node": "~12.12.53",
     "@types/ws": "~7.2.6",
     "@typescript-eslint/eslint-plugin": "~3.9.1",

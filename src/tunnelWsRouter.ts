@@ -19,7 +19,18 @@ export const routeIncommingWsMessage = (msg: WebSocket.Data, ws: ResilientWsClie
         return
 
       case TunnelMessageType.AssignedDomain:
-        console.info('🔗 \x1b[36m\x1b[1mTunnel external address:\x1b[0m', `http://${readCmdPayload(msg).toString()}`)
+        // eslint-disable-next-line no-case-declarations
+        const domain = readCmdPayload(msg).toString()
+
+        // prevent randomly switching domain on every reconnect
+        ws.setReconnectHeaders({
+          'x-tunnel-domain': domain.split('.')[0],
+        })
+
+        console.info(
+          '🔗 \x1b[36m\x1b[1mTunnel external address:\x1b[0m',
+          `${ws.url.startsWith('wss://') ? 'https' : 'http'}://${domain}`,
+        )
         return
 
       default:
