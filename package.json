@@ -1,11 +1,10 @@
 {
-  "name": "@chatium/dev-tunnel-server",
-  "private": true,
+  "name": "@chatium/dev-tunnel-client",
   "version": "0.0.1",
-  "description": "Websocket tunnel server for convenient Chatium app development",
+  "description": "Websocket tunnel client for convenient Chatium app development",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chatium/dev-tunnel-server.git"
+    "url": "git+https://github.com/chatium/dev-tunnel-client.git"
   },
   "keywords": [
     "chatium"
@@ -13,9 +12,9 @@
   "author": "Chatium Team",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/chatium/dev-tunnel-server/issues"
+    "url": "https://github.com/chatium/dev-tunnel-client/issues"
   },
-  "homepage": "https://github.com/chatium/dev-tunnel-server#readme",
+  "homepage": "https://github.com/chatium/dev-tunnel-client#readme",
   "bin": {
     "dev-tunnel": "./dist/main.js"
   },
@@ -24,7 +23,7 @@
       "post-checkout": "yarnhook",
       "post-merge": "yarnhook",
       "post-rewrite": "yarnhook",
-      "pre-commit": "lint-staged",
+      "pre-commit": "npm run prepublishOnly && lint-staged",
       "post-commit": "git update-index --again"
     }
   },
@@ -40,7 +39,8 @@
     "build:watch": "tsc -w",
     "clean": "rimraf lib",
     "lint:all": "eslint --ext .ts .",
-    "serve": "cd dist && node main.js --server ws://localhost:8081 5051",
+    "prepublishOnly": "tsc --sourceMap false",
+    "serve": "cd dist && node main.js 5050",
     "serve:watch": "sleep 5; NODE_ENV='development' nodemon --enable-source-maps -d 2 --cwd dist -w '**/*' -w '.env' -e '*' main.js --server ws://localhost:8081 --domain davojan 5050 && echo '\\x1b[95m\\x1b[1mProbably ts-compilation is not complete yet. Will auto-try again in 10 seconds...\n' && exit 1",
     "start": "npm run watch",
     "watch": "concurrently --restart-tries 3 --restart-after 10000 -p \"[{name}]\" -n \"TS,Node\" -i --default-input-target Node -c \"cyan.bold,green.bold\" \"npm run build:watch\" \"npm run serve:watch\""

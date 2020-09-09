@@ -1,5 +1,5 @@
 # source maps
-dist
+dist/**/*.js.map
 
 # Logs
 logs

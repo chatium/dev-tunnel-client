@@ -144,13 +144,14 @@ export default class ResilientWsClient {
     }
   }
 
-  private onClose = (event: WebSocket.CloseEvent) => {
+  private onClose = (event: WebSocket.CloseEvent): void => {
     this.readyState = WebSocket.CLOSED
     if (this.forceClose) {
       this.clearTimers()
     } else {
       console.warn(
-        `resilient-ws: socket connection closed, reason ${event.reason} (code ${event.code}), trying to reconnect...`,
+        `resilient-ws: socket connection closed, code ${event.code}${event.reason ? ` (${event.reason})` : ''}, ` +
+          'trying to reconnect...',
       )
       this.reconnect()
     }
