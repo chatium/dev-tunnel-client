@@ -1,6 +1,6 @@
 {
   "name": "@chatium/dev-tunnel-client",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Websocket tunnel client for convenient Chatium app development",
   "repository": {
     "type": "git",

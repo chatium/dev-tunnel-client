@@ -29,7 +29,7 @@ export const routeIncommingWsMessage = (msg: WebSocket.Data, ws: ResilientWsClie
 
         console.info(
           '🔗 \x1b[36m\x1b[1mTunnel external address:\x1b[0m',
-          `${ws.url.startsWith('wss://') ? 'https' : 'http'}://${domain}`,
+          `${ws.url.startsWith('wss://') ? 'https' : 'http'}://${domain}${smartlyExtractPortFromUrl(ws.url)}`,
         )
         return
 
@@ -42,6 +42,38 @@ export const routeIncommingWsMessage = (msg: WebSocket.Data, ws: ResilientWsClie
 }
 
 function sendIncommingChunkToLocalServer(connId: number, chunk: Buffer, ws: ResilientWsClient): void {
-  const conn = getLocalConnection(connId) || openLocalConnection(connId, ws)
-  conn.socket.write(chunk)
+  const existingConn = getLocalConnection(connId)
+  if (existingConn) {
+    existingConn.socket.write(chunk, err => {
+      if (err) {
+        // it may be that local server closed keep-alive connection while new request arrived from the tunnel
+        // we can try to fix the situation by checking back after timeout
+        //  to give opportunity to clean existing local connection, initialize new one and retry
+        console.warn(`WARN: detected possible keep-alive connection (${connId}) collision. Will retry...`)
+        setTimeout(() => {
+          if (!getLocalConnection(connId)) {
+            openLocalConnection(connId, ws).socket.write(chunk)
+            console.info(`Re-opened connection (${connId}) after possible keep-alive collision`)
+          } else {
+            console.warn(`WARN: possible keep-alive connection (${connId}) collision is not resolved. Skipping...`)
+          }
+        }, 10)
+      }
+    })
+  } else {
+    openLocalConnection(connId, ws).socket.write(chunk)
+  }
+}
+
+function smartlyExtractPortFromUrl(url: string): string {
+  if (url.includes(':')) {
+    const matches = url.match(/^.+:(\d+).+$/)
+    if (matches) {
+      const port = +matches[1]
+      if (!(port === 80 && url.startsWith('ws://')) && !(port === 443 && url.startsWith('wss://'))) {
+        return `:${port}`
+      }
+    }
+  }
+  return ''
 }

@@ -22,7 +22,7 @@ exports.routeIncommingWsMessage = (msg, ws) => {
                 ws.setReconnectHeaders({
                     'x-tunnel-domain': domain.split('.')[0],
                 });
-                console.info('🔗 \x1b[36m\x1b[1mTunnel external address:\x1b[0m', `${ws.url.startsWith('wss://') ? 'https' : 'http'}://${domain}`);
+                console.info('🔗 \x1b[36m\x1b[1mTunnel external address:\x1b[0m', `${ws.url.startsWith('wss://') ? 'https' : 'http'}://${domain}${smartlyExtractPortFromUrl(ws.url)}`);
                 return;
             default:
                 console.error(`routeIncommingWsMessage: received unexpected message type ${messageType}`);
@@ -33,6 +33,39 @@ exports.routeIncommingWsMessage = (msg, ws) => {
     }
 };
 function sendIncommingChunkToLocalServer(connId, chunk, ws) {
-    const conn = localConnectionsRegistry_1.getLocalConnection(connId) || localConnectionsRegistry_1.openLocalConnection(connId, ws);
-    conn.socket.write(chunk);
+    const existingConn = localConnectionsRegistry_1.getLocalConnection(connId);
+    if (existingConn) {
+        existingConn.socket.write(chunk, err => {
+            if (err) {
+                // it may be that local server closed keep-alive connection while new request arrived from the tunnel
+                // we can try to fix the situation by checking back after timeout
+                //  to give opportunity to clean existing local connection, initialize new one and retry
+                console.warn(`WARN: detected possible keep-alive connection (${connId}) collision. Will retry...`);
+                setTimeout(() => {
+                    if (!localConnectionsRegistry_1.getLocalConnection(connId)) {
+                        localConnectionsRegistry_1.openLocalConnection(connId, ws).socket.write(chunk);
+                        console.info(`Re-opened connection (${connId}) after possible keep-alive collision`);
+                    }
+                    else {
+                        console.warn(`WARN: possible keep-alive connection (${connId}) collision is not resolved. Skipping...`);
+                    }
+                }, 10);
+            }
+        });
+    }
+    else {
+        localConnectionsRegistry_1.openLocalConnection(connId, ws).socket.write(chunk);
+    }
+}
+function smartlyExtractPortFromUrl(url) {
+    if (url.includes(':')) {
+        const matches = url.match(/^.+:(\d+).+$/);
+        if (matches) {
+            const port = +matches[1];
+            if (!(port === 80 && url.startsWith('ws://')) && !(port === 443 && url.startsWith('wss://'))) {
+                return `:${port}`;
+            }
+        }
+    }
+    return '';
 }
