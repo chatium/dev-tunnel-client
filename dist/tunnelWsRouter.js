@@ -34,7 +34,7 @@ exports.routeIncommingWsMessage = (msg, ws) => {
 };
 function sendIncommingChunkToLocalServer(connId, chunk, ws) {
     const existingConn = localConnectionsRegistry_1.getLocalConnection(connId);
-    if (existingConn) {
+    if (existingConn && !existingConn.closedFromRemote) {
         existingConn.socket.write(chunk, err => {
             if (err) {
                 // it may be that local server closed keep-alive connection while new request arrived from the tunnel

@@ -21,11 +21,15 @@ export function openLocalConnection(connId: number, ws: ResilientWsClient): Loca
   })
 
   socket.once('close', () => {
-    // notify tunnel server to close the connection only if connection closing is not initialized from ws tunnel
-    if (!conn.closedFromRemote) {
-      ws.isConnected && ws.currentSocket.send(ConnectionClosedMessage(connId))
+    // prevent collision when new connection replaced the old one with the same ID
+    //  while old socket hasn't been fully closed yet
+    if (connections.get(connId)?.socket === socket) {
+      // notify tunnel server to close the connection only if connection closing is not initialized from ws tunnel
+      if (!conn.closedFromRemote) {
+        ws.isConnected && ws.currentSocket.send(ConnectionClosedMessage(connId))
+      }
+      connections.delete(connId)
     }
-    connections.delete(connId)
 
     console.info(`Connection ${connId} closed by ${conn.closedFromRemote ? 'remote client or tunnel' : 'local server'}`)
   })

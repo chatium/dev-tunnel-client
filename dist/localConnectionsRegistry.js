@@ -18,11 +18,16 @@ function openLocalConnection(connId, ws) {
         ws.isConnected && ws.currentSocket.send(tunnelMessages_1.DataMessage(connId, chunk));
     });
     socket.once('close', () => {
-        // notify tunnel server to close the connection only if connection closing is not initialized from ws tunnel
-        if (!conn.closedFromRemote) {
-            ws.isConnected && ws.currentSocket.send(tunnelMessages_1.ConnectionClosedMessage(connId));
+        var _a;
+        // prevent collision when new connection replaced the old one with the same ID
+        //  while old socket hasn't been fully closed yet
+        if (((_a = connections.get(connId)) === null || _a === void 0 ? void 0 : _a.socket) === socket) {
+            // notify tunnel server to close the connection only if connection closing is not initialized from ws tunnel
+            if (!conn.closedFromRemote) {
+                ws.isConnected && ws.currentSocket.send(tunnelMessages_1.ConnectionClosedMessage(connId));
+            }
+            connections.delete(connId);
         }
-        connections.delete(connId);
         console.info(`Connection ${connId} closed by ${conn.closedFromRemote ? 'remote client or tunnel' : 'local server'}`);
     });
     socket.once('error', err => {

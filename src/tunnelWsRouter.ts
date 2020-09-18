@@ -43,7 +43,7 @@ export const routeIncommingWsMessage = (msg: WebSocket.Data, ws: ResilientWsClie
 
 function sendIncommingChunkToLocalServer(connId: number, chunk: Buffer, ws: ResilientWsClient): void {
   const existingConn = getLocalConnection(connId)
-  if (existingConn) {
+  if (existingConn && !existingConn.closedFromRemote) {
     existingConn.socket.write(chunk, err => {
       if (err) {
         // it may be that local server closed keep-alive connection while new request arrived from the tunnel
