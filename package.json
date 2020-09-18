@@ -1,6 +1,6 @@
 {
   "name": "@chatium/dev-tunnel-client",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Websocket tunnel client for convenient Chatium app development",
   "repository": {
     "type": "git",
@@ -41,11 +41,12 @@
     "lint:all": "eslint --ext .ts .",
     "prepublishOnly": "tsc --sourceMap false",
     "serve": "cd dist && node main.js 5050",
-    "serve:watch": "sleep 5; NODE_ENV='development' nodemon --enable-source-maps -d 2 --cwd dist -w '**/*' -w '.env' -e '*' main.js --server ws://localhost:8081 --domain davojan 5050 && echo '\\x1b[95m\\x1b[1mProbably ts-compilation is not complete yet. Will auto-try again in 10 seconds...\n' && exit 1",
+    "serve:watch": "sleep 5; NODE_ENV='development' nodemon --enable-source-maps -d 2 --cwd dist -w '**/*' -w '.env' -e '*' main.js --server ws://localhost:8081 5050 && echo '\\x1b[95m\\x1b[1mProbably ts-compilation is not complete yet. Will auto-try again in 10 seconds...\n' && exit 1",
     "start": "npm run watch",
     "watch": "concurrently --restart-tries 3 --restart-after 10000 -p \"[{name}]\" -n \"TS,Node\" -i --default-input-target Node -c \"cyan.bold,green.bold\" \"npm run build:watch\" \"npm run serve:watch\""
   },
   "dependencies": {
+    "dotenv": "~8.2.0",
     "minimist": "~1.2.5",
     "tslib": "~2.0.1",
     "ws": "~7.3.1"
